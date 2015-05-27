@@ -2,7 +2,10 @@ from datetime import datetime
 from django.conf import settings
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes import generic
+try:
+    from django.contrib.contenttypes.fields import GenericForeignKey
+except ImportError:
+    from django.contrib.contenttypes.generic import GenericForeignKey
 
 try:
     from django.utils.timezone import now
@@ -24,7 +27,7 @@ class Vote(models.Model):
 
     objects         = VoteManager()
 
-    content_object  = generic.GenericForeignKey()
+    content_object  = GenericForeignKey()
 
     class Meta:
         unique_together = (('content_type', 'object_id', 'key', 'user', 'ip_address', 'cookie'))
@@ -54,8 +57,8 @@ class Score(models.Model):
     key             = models.CharField(max_length=32)
     score           = models.IntegerField()
     votes           = models.PositiveIntegerField()
-    
-    content_object  = generic.GenericForeignKey()
+
+    content_object  = GenericForeignKey()
 
     class Meta:
         unique_together = (('content_type', 'object_id', 'key'),)
@@ -69,9 +72,9 @@ class SimilarUser(models.Model):
     agrees          = models.PositiveIntegerField(default=0)
     disagrees       = models.PositiveIntegerField(default=0)
     exclude         = models.BooleanField(default=False)
-    
+
     objects         = SimilarUserManager()
-    
+
     class Meta:
         unique_together = (('from_user', 'to_user'),)
 
@@ -82,11 +85,11 @@ class IgnoredObject(models.Model):
     user            = models.ForeignKey(settings.AUTH_USER_MODEL)
     content_type    = models.ForeignKey(ContentType)
     object_id       = models.PositiveIntegerField()
-    
-    content_object  = generic.GenericForeignKey()
-    
+
+    content_object  = GenericForeignKey()
+
     class Meta:
         unique_together = (('content_type', 'object_id'),)
-    
+
     def __unicode__(self):
         return self.content_object
