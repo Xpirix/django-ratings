@@ -1,13 +1,14 @@
+from __future__ import absolute_import
 from django.db.models import IntegerField, PositiveIntegerField
 from django.conf import settings
 
-import forms
+from . import forms
 import itertools
 from datetime import datetime
 
-from models import Vote, Score
-from default_settings import RATINGS_VOTES_PER_IP
-from exceptions import *
+from .models import Vote, Score
+from .default_settings import RATINGS_VOTES_PER_IP
+from .exceptions import *
 
 if 'django.contrib.contenttypes' not in settings.INSTALLED_APPS:
     raise ImportError("djangoratings requires django.contrib.contenttypes in your INSTALLED_APPS")
@@ -27,7 +28,7 @@ except ImportError:
     now = datetime.now
 
 def md5_hexdigest(value):
-    return md5(value).hexdigest()
+    return md5(value.encode()).hexdigest()
 
 class Rating(object):
     def __init__(self, score, votes):
@@ -123,9 +124,12 @@ class RatingManager(object):
         except Vote.DoesNotExist:
             pass
         return
+
+    def get_range(self):
+        return self.field.range        
     
     def get_iterable_range(self):
-        return range(1, self.field.range) #started from 1, because 0 is equal to delete
+        return range(1, self.field.range)
         
     def add(self, score, user, ip_address, cookies={}, commit=True):
         """add(score, user, ip_address)
@@ -273,7 +277,12 @@ class RatingManager(object):
         if self.content_type is None:
             self.content_type = ContentType.objects.get_for_model(self.instance)
         return self.content_type
-    
+
+    def get_content_type_id(self):
+        if self.content_type is None:
+            self.content_type = ContentType.objects.get_for_model(self.instance)
+        return self.content_type.id
+
     def _update(self, commit=False):
         """Forces an update of this rating (useful for when Vote objects are removed)."""
         votes = Vote.objects.filter(
